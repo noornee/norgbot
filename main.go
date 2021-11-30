@@ -47,7 +47,7 @@ func main() {
 
 	fmt.Println("Bot is running")
 
-	// Cleanly close down the Discord session.
+	
 	<-make(chan struct{})
 
 }
