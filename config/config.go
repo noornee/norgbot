@@ -7,21 +7,23 @@ import (
 )
 
 type configStruct struct {
-	Token string `json:"Token"`
+	Token     string `json:"token"`
+	BotPrefix string `json:"botPrefix"`
 }
 
 var (
-	Token  string
-	config *configStruct
+	Token     string
+	BotPrefix string
+	config    *configStruct
 )
 
 func ReadConfig() error {
 
-	fmt.Println("Reading from config")
+	fmt.Println("Reading from config file...")
 
 	file, err := ioutil.ReadFile("config/config.json")
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(err.Error())
 		return err
 	}
 
@@ -31,6 +33,7 @@ func ReadConfig() error {
 	}
 
 	Token = config.Token
+	BotPrefix = config.BotPrefix
 
 	return nil
 
