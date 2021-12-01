@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/gocolly/colly"
 	"github.com/noornee/norgbot/config"
 )
 
@@ -35,7 +36,6 @@ func Start() {
 
 	err = goBot.Open()
 
-
 	if err != nil {
 		log.Fatalf("There was an error launching bot %v", err)
 	}
@@ -47,12 +47,43 @@ func Start() {
 func MessageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	echo := config.BotPrefix + "echo "
+	anime := config.BotPrefix + "anime "
+
+	ch := make(chan string) // channel for the anime url
+
+	if m.Author.ID == BotID {
+		return
+	}
 
 	if strings.HasPrefix(m.Content, echo) {
-		if m.Author.ID == BotID {
-			return
-		}
 		s.ChannelMessageSend(m.ChannelID, m.Content[len(echo):])
 	}
+
+	if strings.HasPrefix(m.Content, anime) {
+		word := m.Content[len(anime):]
+		go AnimeScraper(word, ch)
+		for {
+			s.ChannelMessageSend(m.ChannelID, <-ch)
+		}
+
+	}
+
+}
+
+// A function that makes use of the colly framework to scrape data from an anime site.
+func AnimeScraper(word string, ch chan string) {
+	c := colly.NewCollector(
+		colly.AllowedDomains("www1.gogoanime.cm"),
+	)
+
+	c.OnHTML("div.img a", func(e *colly.HTMLElement) {
+		e.Request.Visit(e.Attr("href"))
+	})
+
+	c.OnRequest(func(r *colly.Request) {
+		ch <- r.URL.String()
+	})
+
+	c.Visit(fmt.Sprintf("https://www1.gogoanime.cm//search.html?keyword=%v", word))
 
 }
